@@ -110,6 +110,7 @@ ActiveRecord::Schema.define(version: 20160408214135) do
     t.boolean  "send_build_success_email",                default: true,  null: false
     t.boolean  "email_on_first_failure",                  default: false, null: false
     t.boolean  "send_merge_successful_email",             default: true,  null: false
+    t.boolean  "enabled",                                 default: true, null: false
   end
 
   add_index "repositories", ["host", "namespace", "name"], name: "index_repositories_on_host_and_namespace_and_name", unique: true, using: :btree

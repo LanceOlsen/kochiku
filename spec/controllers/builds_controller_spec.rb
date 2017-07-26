@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe BuildsController do
+  render_views
+
   describe "#create" do
     let(:action) { :create }
     let(:repo) { FactoryGirl.create(:repository) }
@@ -132,6 +134,46 @@ describe BuildsController do
       ret = JSON.parse(response.body)
       expect(ret['build']['build_parts'].length).to eq(1)
       expect(ret['build']['build_parts'][0]['build_id']).to eq(build.id)
+    end
+
+    context "when the repository is disabled" do
+      let(:build) {
+        FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false), state: :failed)
+      }
+
+      it "should not show 'Rebuild failed parts' button or rebuild action in #build-summary table" do
+        build_part = FactoryGirl.create(:build_part, build_instance: build)
+        FactoryGirl.create(:completed_build_attempt, build_part: build_part, state: :failed)
+        get :show, repository_path: build.repository, id: build.id
+        expect(response.body).to_not match(/<input.*value="Rebuild failed parts"/)
+        expect(response.body).to_not match(%r{<a.*>Rebuild<\/a>$})
+      end
+
+      it "should not show 'Retry Partitioning' button" do
+        build.build_parts.delete_all
+        get :show, repository_path: build.repository, id: build.id
+        expect(response.body).to_not match(/<input.*value="Retry Partitioning"/)
+      end
+    end
+
+    context "when the repository is enabled" do
+      let(:build) {
+        FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: true), state: :failed)
+      }
+
+      it "should show 'Rebuild failed parts' button or rebuild action in #build-summary table" do
+        build_part = FactoryGirl.create(:build_part, build_instance: build)
+        FactoryGirl.create(:completed_build_attempt, build_part: build_part, state: :failed)
+        get :show, repository_path: build.repository, id: build.id
+        expect(response.body).to match(/<input.*value="Rebuild failed parts"/)
+        expect(response.body).to match(%r{<a.*>Rebuild<\/a>$})
+      end
+
+      it "should show 'Retry Partitioning' button" do
+        build.build_parts.delete_all
+        get :show, repository_path: build.repository.to_param, id: build.id
+        expect(response.body).to match(/<input.*value="Retry Partitioning"/)
+      end
     end
   end
 
@@ -297,6 +339,9 @@ describe BuildsController do
 
   describe "#retry_partitioning" do
     let(:build) { FactoryGirl.create(:build) }
+    let(:build2) {
+      FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false))
+    }
     before do
       allow(GitRepo).to receive(:load_kochiku_yml).and_return(nil)
     end
@@ -315,6 +360,14 @@ describe BuildsController do
         FactoryGirl.create(:build_part, build_instance: build)
         post :retry_partitioning, repository_path: build.repository.to_param, id: build.id
         expect(response).to redirect_to(repository_build_path(build.repository, build))
+      end
+    end
+
+    context "when the build's repository is disabled" do
+      it "should not partition build" do
+        expect(Resque).to_not receive(:enqueue)
+        post :retry_partitioning, repository_path: build2.repository.to_param, id: build2.id
+        expect(response).to redirect_to(repository_build_path(build2.repository, build2))
       end
     end
   end

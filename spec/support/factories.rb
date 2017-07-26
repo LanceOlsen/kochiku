@@ -1,7 +1,7 @@
 FactoryGirl.define do
   factory :branch do
     sequence(:name) {|n| "branch_#{n}" }
-    association :repository
+    # association :repository, factory: :repository, enabled: false
 
     factory :convergence_branch do
       name "1-x-stable"
@@ -11,6 +11,15 @@ FactoryGirl.define do
     factory :master_branch do
       name "master"
       convergence true
+    end
+
+    transient do
+      enabled true
+    end
+    repository { build(:repository, enabled: enabled) }
+
+    after(:create) do |branch|
+      branch.repository.save!
     end
   end
 
@@ -74,6 +83,7 @@ FactoryGirl.define do
     test_command "script/ci worker"
     on_green_update 'last-green-build'
     allows_kochiku_merges true
+    enabled true
 
     factory :stash_repository do
       sequence(:url) { |n| "git@stash.example.com:bucket_name/test-repo#{n}.git" }

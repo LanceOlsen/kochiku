@@ -82,7 +82,7 @@ class Build < ActiveRecord::Base
   end
 
   def enqueue_partitioning_job
-    Resque.enqueue(BuildPartitioningJob, self.id)
+    Resque.enqueue(BuildPartitioningJob, self.id) if repository.enabled
   end
 
   def kochiku_yml

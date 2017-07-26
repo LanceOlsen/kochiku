@@ -3,6 +3,7 @@ require 'spec_helper'
 describe Build do
   let(:branch) { FactoryGirl.create(:branch) }
   let(:build) { FactoryGirl.create(:build, branch_record: branch) }
+  let(:build2) { FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false)) }
   let(:parts) { [{'type' => 'cucumber', 'files' => ['a', 'b'], 'queue' => 'ci'}, {'type' => 'rspec', 'files' => ['c', 'd'], 'queue' => 'ci'}] }
 
   before do
@@ -76,9 +77,15 @@ describe Build do
       build.build_parts.all? {|bp| expect(bp.build_attempts).to have(1).item }
     end
 
-    it "should enqueue build part jobs" do
+    it "should enqueue build part jobs if repository is enabled" do
       expect(BuildAttemptJob).to receive(:enqueue_on).twice
       build.partition(parts)
+    end
+
+    it "should not enqueue build part jobs if repository is disabled" do
+      build2.partition(parts)
+      expect(BuildAttemptJob).to receive(:enqueue_on).exactly(0).times
+      expect(build2.build_parts(true)).to be_empty
     end
 
     it "rolls back any changes to the database if an error occurs" do
