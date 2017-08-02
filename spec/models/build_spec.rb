@@ -3,7 +3,6 @@ require 'spec_helper'
 describe Build do
   let(:branch) { FactoryGirl.create(:branch) }
   let(:build) { FactoryGirl.create(:build, branch_record: branch) }
-  let(:build2) { FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false)) }
   let(:parts) { [{'type' => 'cucumber', 'files' => ['a', 'b'], 'queue' => 'ci'}, {'type' => 'rspec', 'files' => ['c', 'd'], 'queue' => 'ci'}] }
 
   before do
@@ -83,6 +82,7 @@ describe Build do
     end
 
     it "should not enqueue build part jobs if repository is disabled" do
+      build2 = FactoryGirl.create(:build_on_disabled_repo)
       build2.partition(parts)
       expect(BuildAttemptJob).to receive(:enqueue_on).exactly(0).times
       expect(build2.build_parts(true)).to be_empty

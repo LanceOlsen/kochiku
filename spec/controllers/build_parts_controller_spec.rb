@@ -26,12 +26,7 @@ describe BuildPartsController do
     end
 
     context "when the repository is disabled" do
-      let(:build2) {
-        FactoryGirl.create(
-          :build,
-          branch_record: FactoryGirl.create(:branch, enabled: false)
-        )
-      }
+      let(:build2) { FactoryGirl.create(:build_on_disabled_repo) }
       let(:build_part2) { FactoryGirl.create(:build_part, build_instance: build2) }
 
       it "should not show Rebuild button" do
@@ -41,12 +36,7 @@ describe BuildPartsController do
     end
 
     context "when the repository is enabled" do
-      let(:build2) {
-        FactoryGirl.create(
-          :build,
-          branch_record: FactoryGirl.create(:branch, enabled: true)
-        )
-      }
+      let(:build2) { FactoryGirl.create(:build) }
       let(:build_part2) { FactoryGirl.create(:build_part, build_instance: build2) }
 
       it "should show Rebuild button" do

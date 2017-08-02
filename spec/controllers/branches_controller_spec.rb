@@ -41,7 +41,7 @@ describe BranchesController do
     end
 
     context "when the repository is disabled" do
-      let(:branch2) { FactoryGirl.create(:branch, enabled: false) }
+      let(:branch2) { FactoryGirl.create(:branch_on_disabled_repo) }
 
       before do
         build3 = FactoryGirl.create(:build, branch_record: branch2, state: :failed)
@@ -49,19 +49,14 @@ describe BranchesController do
         FactoryGirl.create(:completed_build_attempt, build_part: build_part, state: :failed)
       end
 
-      it "should not show build button" do
+      it "should disable build button" do
         get :show, repository_path: branch2.repository, id: branch2
-        expect(response.body).to_not match(/class="build-button"/)
-      end
-
-      it "should not show rebuild action in #project-part-info table" do
-        get :show, repository_path: branch2.repository, id: branch2
-        expect(response.body).to_not match(%r{<a.*>Rebuild<\/a>$})
+        expect(response.body).to match(/disabled="disabled"/)
       end
     end
 
     context "when the repository is enabled" do
-      let(:branch2) { FactoryGirl.create(:branch, enabled: true) }
+      let(:branch2) { FactoryGirl.create(:branch) }
 
       before do
         build3 = FactoryGirl.create(:build, branch_record: branch2, state: :failed)
@@ -69,14 +64,9 @@ describe BranchesController do
         FactoryGirl.create(:completed_build_attempt, build_part: build_part, state: :failed)
       end
 
-      it "should show build button" do
+      it "shouldn't disable build button" do
         get :show, repository_path: branch2.repository, id: branch2
-        expect(response.body).to match(/class="build-button"/)
-      end
-
-      it "should show rebuild action in #project-part-info table" do
-        get :show, repository_path: branch2.repository, id: branch2
-        expect(response.body).to match(%r{<a.*>Rebuild<\/a>$})
+        expect(response.body).to_not match(/disabled="disabled"/)
       end
     end
   end

@@ -27,7 +27,7 @@
                 築 <rt>ちく</rt>
           .header-right
             = yield :header
-      - if @repository && !@repository.enabled
+      - if @repository && !@repository.enabled?
         .section-wrapper#disabled-repo-alert
           .section
             .warn This repository is currently disabled.

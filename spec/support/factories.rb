@@ -1,7 +1,7 @@
 FactoryGirl.define do
   factory :branch do
     sequence(:name) {|n| "branch_#{n}" }
-    # association :repository, factory: :repository, enabled: false
+    association :repository
 
     factory :convergence_branch do
       name "1-x-stable"
@@ -13,13 +13,8 @@ FactoryGirl.define do
       convergence true
     end
 
-    transient do
-      enabled true
-    end
-    repository { build(:repository, enabled: enabled) }
-
-    after(:create) do |branch|
-      branch.repository.save!
+    factory :branch_on_disabled_repo do
+      association :repository, factory: :disabled_repository
     end
   end
 
@@ -43,6 +38,10 @@ FactoryGirl.define do
       after(:create) do |build_instance, evaluator|
         create_list(:build_part_with_build_attempt, evaluator.num_build_parts, build_instance: build_instance)
       end
+    end
+
+    factory :build_on_disabled_repo do
+      association :branch_record, factory: :branch_on_disabled_repo
     end
   end
 
@@ -87,6 +86,10 @@ FactoryGirl.define do
 
     factory :stash_repository do
       sequence(:url) { |n| "git@stash.example.com:bucket_name/test-repo#{n}.git" }
+    end
+
+    factory :disabled_repository do
+      enabled false
     end
   end
 end

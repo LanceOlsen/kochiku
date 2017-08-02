@@ -138,7 +138,7 @@ describe BuildsController do
 
     context "when the repository is disabled" do
       let(:build) {
-        FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false), state: :failed)
+        FactoryGirl.create(:build_on_disabled_repo, state: :failed)
       }
 
       it "should not show 'Rebuild failed parts' button or rebuild action in #build-summary table" do
@@ -158,7 +158,7 @@ describe BuildsController do
 
     context "when the repository is enabled" do
       let(:build) {
-        FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: true), state: :failed)
+        FactoryGirl.create(:build, state: :failed)
       }
 
       it "should show 'Rebuild failed parts' button or rebuild action in #build-summary table" do
@@ -339,9 +339,6 @@ describe BuildsController do
 
   describe "#retry_partitioning" do
     let(:build) { FactoryGirl.create(:build) }
-    let(:build2) {
-      FactoryGirl.create(:build, branch_record: FactoryGirl.create(:branch, enabled: false))
-    }
     before do
       allow(GitRepo).to receive(:load_kochiku_yml).and_return(nil)
     end
@@ -365,6 +362,7 @@ describe BuildsController do
 
     context "when the build's repository is disabled" do
       it "should not partition build" do
+        build2 = FactoryGirl.create(:build_on_disabled_repo)
         expect(Resque).to_not receive(:enqueue)
         post :retry_partitioning, repository_path: build2.repository.to_param, id: build2.id
         expect(response).to redirect_to(repository_build_path(build2.repository, build2))
